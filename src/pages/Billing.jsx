@@ -60,68 +60,38 @@ export default function Billing() {
     return cart.reduce((sum, x) => sum + Number(x.price) * x.qty, 0);
   }, [cart]);
 
-  const sendBill = async () => {
-    if (cart.length === 0) return alert("Cart is empty");
-
-    // Accept 10 digits only (India)
-    const onlyDigits = mobile.replace(/\D/g, "");
-    if (onlyDigits.length !== 10) {
+// Send bill via WhatsApp
+const sendBill = async () => {
+  try {
+    if (!/^[0-9]{10}$/.test(mobile)) {
       alert("Enter valid 10-digit mobile number");
       return;
     }
 
-    try {
-      setLoading(true);
+    // 1) Save bill to backend first
+    const res = await api.post("/bill", {
+      mobile,
+      items: cart,
+      total,
+    });
 
-      // create bill in backend, backend returns invoiceId
-      const res = await api.post("/bill", {
-        mobile: onlyDigits,
-        items: cart.map((x) => ({
-          id: x.id,
-          name: x.name,
-          price: x.price,
-          qty: x.qty,
-        })),
-        total,
-      });
+    // 2) Backend must return billId
+    const billId = res.data.billId;
 
-      const invoiceId = res.data?.invoiceId;
-      if (!invoiceId) {
-        alert("❌ Invoice ID not created");
-        return;
-      }
+    // 3) Create invoice page URL (A4 page)
+    const invoiceUrl = `https://restaurant-frontend-five-snowy.vercel.app/invoice/${billId}`;
 
-      // invoice url customer will open
-      const invoiceUrl = `https://restaurant-frontend-pos.vercel.app/invoice/${invoiceId}`;
+    // 4) WhatsApp Message
+    const msg = `✅ Restaurant POS\n\n🧾 Your Invoice Link:\n${invoiceUrl}\n\nThank you!`;
 
-      // WhatsApp send link
-      const phone = "91" + onlyDigits;
+    const waLink = `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`;
 
-      const msg =
-        `🧾 *Restaurant Invoice*\n\n` +
-        `Invoice Link:\n${invoiceUrl}\n\n` +
-        `Total: ₹${total}\n\n` +
-        `Thank you 🙏`;
-
-      window.open(
-        `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-        "_blank"
-      );
-
-      alert("✅ Invoice link generated & WhatsApp opened");
-
-      // clear cart
-      setCart([]);
-      setMobile("");
-      setQuery("");
-    } catch (e) {
-      console.log(e);
-      alert("❌ Failed to create bill");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    window.open(waLink, "_blank");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to send bill");
+  }
+};
   return (
     <div style={styles.page}>
       <div style={styles.header}>
