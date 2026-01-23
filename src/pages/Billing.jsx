@@ -68,28 +68,46 @@ const sendBill = async () => {
       return;
     }
 
-    // 1) Save bill to backend first
+    if (!cart || cart.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
+
+    // 1) Create bill in backend (Render)
     const res = await api.post("/bill", {
       mobile,
       items: cart,
       total,
     });
 
-    // 2) Backend must return billId
-    const billId = res.data.billId;
+    const invoiceId = res.data?.invoiceId;
 
-    // 3) Create invoice page URL (A4 page)
-    const invoiceUrl = `https://restaurant-frontend-five-snowy.vercel.app/invoice/${billId}`;
+    if (!invoiceId) {
+      alert("InvoiceId not returned from backend");
+      return;
+    }
 
-    // 4) WhatsApp Message
-    const msg = `✅ Restaurant POS\n\n🧾 Your Invoice Link:\n${invoiceUrl}\n\nThank you!`;
+    // 2) Create invoice link (Vercel frontend)
+    const invoiceLink = `https://restaurant-frontend-five-snowy.vercel.app/invoice/${invoiceId}`;
 
-    const waLink = `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`;
+    // 3) WhatsApp message
+    let msg = `🧾 Restaurant Invoice\n\n`;
 
-    window.open(waLink, "_blank");
+    cart.forEach((i) => {
+      msg += `${i.name} x ${i.qty} = ₹${i.qty * i.price}\n`;
+    });
+
+    msg += `\nTotal: ₹${total}\n\n`;
+    msg += `Invoice Link:\n${invoiceLink}`;
+
+    // 4) Open WhatsApp
+    window.open(
+      `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
   } catch (err) {
-    console.error(err);
-    alert("Failed to send bill");
+    console.log(err);
+    alert("Send Bill failed: " + (err?.response?.data?.message || err.message));
   }
 };
   return (
