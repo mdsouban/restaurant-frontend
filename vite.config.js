@@ -7,16 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
         name: "Restaurant POS",
         short_name: "POS",
-        description: "Restaurant POS Billing App",
-        theme_color: "#111827",
-        background_color: "#ffffff",
-        display: "standalone",
         start_url: "/",
-        scope: "/",
+        display: "standalone",
+        background_color: "#ffffff",
+        theme_color: "#ff6a00",
         icons: [
           {
             src: "/icon-192.png",
@@ -24,7 +21,7 @@ export default defineConfig({
             type: "image/png",
           },
           {
-            src: "/icon-512.png",
+            src: "/icon.png",
             sizes: "512x512",
             type: "image/png",
           },
