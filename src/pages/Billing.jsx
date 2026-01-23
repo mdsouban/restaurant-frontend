@@ -88,7 +88,9 @@ const sendBill = async () => {
     }
 
     // 2) Create invoice link (Vercel frontend)
-    const invoiceLink = `https://restaurant-frontend-five-snowy.vercel.app/invoice/${invoiceId}`;
+    const FRONTEND_URL = "https://restaurant-frontend-five-snowy.vercel.app";
+
+const invoiceLink = `${FRONTEND_URL}/invoice/${invoiceId}`;
 
     // 3) WhatsApp message
     let msg = `🧾 Restaurant Invoice\n\n`;
