@@ -80,7 +80,7 @@ const sendBill = async () => {
       total,
     });
 
-    const invoiceId = res.data?.invoiceId;
+    const invoiceId = res.data.invoiceId;
 
     if (!invoiceId) {
       alert("InvoiceId not returned from backend");
