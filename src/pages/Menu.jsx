@@ -54,16 +54,9 @@ export default function Menu() {
         return;
       }
 
-      const form = new FormData();
-      form.append("name", name.trim());
-      form.append("price", price);
-
-      if (image) {
-        form.append("image", image);
-      }
-
-      await api.post("/menu", form, {
-        headers: { "Content-Type": "multipart/form-data" },
+      await api.post("/menu", {
+        name: name.trim(),
+        price: Number(price)
       });
 
       alert("✅ Item saved");
