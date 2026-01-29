@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import api from "../api";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { billApi } from "../api";
 
 export default function Invoice() {
   const { id } = useParams();
-  const nav = useNavigate();
   const [bill, setBill] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadInvoice();
@@ -14,118 +14,76 @@ export default function Invoice() {
 
   const loadInvoice = async () => {
     try {
-      const res = await api.get(`/bill/${id}`);
-      setBill(res.data);
+      const data = await billApi.getById(id);
+      setBill(data);
     } catch (err) {
-      alert("Invoice not found");
-      nav("/");
+      setError("Invoice not found");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const printInvoice = () => {
-    window.print();
-  };
-
-  if (loading) return <div className="loading">Loading invoice...</div>;
-  if (!bill) return <div className="error">Invoice not found</div>;
-
-  const currentDate = new Date().toLocaleDateString();
+  if (loading) return <div style={{padding: 20}}>Loading invoice...</div>;
+  if (error) return <div style={{padding: 20, color: 'red'}}>{error}</div>;
+  if (!bill) return <div style={{padding: 20}}>No invoice found</div>;
 
   return (
-    <div className="invoice-container">
-      <div className="invoice">
-        <div className="header">
-          <h1>🍽️ Restaurant POS</h1>
-          <div className="invoice-info">
-            <h2>INVOICE #{bill.id}</h2>
-            <p>Date: {currentDate}</p>
-          </div>
-        </div>
-
-        <div className="customer-info">
-          <h3>Customer Details</h3>
-          <p><strong>Mobile:</strong> {bill.mobile}</p>
-        </div>
-
-        <div className="items-section">
-          <h3>Items Ordered</h3>
-          <table className="items-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(bill.items || []).map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.item_name}</td>
-                  <td>{item.qty}</td>
-                  <td>₹{item.price}</td>
-                  <td>₹{item.price * item.qty}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="total-section">
-          <h2>Total Amount: ₹{bill.total}</h2>
-        </div>
-
-        <div className="footer">
-          <p>Thank you for your business!</p>
-          <p>Visit us again soon 😊</p>
-        </div>
+    <div style={{padding: 20, maxWidth: 600, margin: '0 auto', fontFamily: 'Arial'}}>
+      <div style={{textAlign: 'center', marginBottom: 20}}>
+        <h1>🍽️ Restaurant Invoice</h1>
+        <p>Bill #{bill.id}</p>
+        <p>Date: {new Date(bill.created_at).toLocaleString()}</p>
+        <p>Mobile: {bill.mobile}</p>
       </div>
 
-      <div className="actions no-print">
-        <button className="btn btn-blue" onClick={() => nav("/")}>
-          ← Back to Dashboard
-        </button>
-        <button className="btn btn-green" onClick={printInvoice}>
+      <hr/>
+
+      <h3>Order Details:</h3>
+      <table style={{width: '100%', borderCollapse: 'collapse'}}>
+        <thead>
+          <tr style={{borderBottom: '2px solid #333'}}>
+            <th align="left">Item</th>
+            <th align="right">Qty</th>
+            <th align="right">Price</th>
+            <th align="right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bill.items.map((item, idx) => (
+            <tr key={idx} style={{borderBottom: '1px solid #eee'}}>
+              <td>{item.item_name}</td>
+              <td align="right">{item.qty}</td>
+              <td align="right">₹{item.price}</td>
+              <td align="right">₹{(item.price * item.qty).toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr style={{fontWeight: 'bold', fontSize: 18, borderTop: '2px solid #333'}}>
+            <td colSpan="3" align="right">Total:</td>
+            <td align="right">₹{Number(bill.total).toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style={{marginTop: 30, textAlign: 'center', color: '#666'}}>
+        <p>Thank you for dining with us!</p>
+        <button 
+          onClick={() => window.print()}
+          style={{
+            padding: '10px 20px',
+            fontSize: 16,
+            cursor: 'pointer',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: 5
+          }}
+        >
           🖨️ Print Invoice
         </button>
       </div>
-
-      <style>{`
-        .invoice-container { padding: 20px; font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; }
-        .invoice { background: white; border: 1px solid #ddd; border-radius: 12px; padding: 30px; margin-bottom: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007bff; padding-bottom: 20px; margin-bottom: 20px; }
-        .header h1 { margin: 0; color: #007bff; font-size: 28px; }
-        .invoice-info { text-align: right; }
-        .invoice-info h2 { margin: 0; color: #333; }
-        .invoice-info p { margin: 5px 0 0; color: #666; }
-        .customer-info { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-        .customer-info h3 { margin: 0 0 10px; color: #333; }
-        .items-section { margin-bottom: 20px; }
-        .items-section h3 { margin: 0 0 15px; color: #333; }
-        .items-table { width: 100%; border-collapse: collapse; }
-        .items-table th, .items-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        .items-table th { background: #f8f9fa; font-weight: bold; color: #333; }
-        .items-table td:nth-child(2), .items-table td:nth-child(3), .items-table td:nth-child(4) { text-align: right; }
-        .total-section { text-align: right; padding: 20px; background: #007bff; color: white; border-radius: 8px; margin-bottom: 20px; }
-        .total-section h2 { margin: 0; font-size: 24px; }
-        .footer { text-align: center; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
-        .footer p { margin: 5px 0; }
-        .actions { display: flex; gap: 10px; justify-content: center; }
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-blue { background: #007bff; color: white; }
-        .btn-green { background: #28a745; color: white; }
-        .btn:hover { opacity: 0.9; }
-        .loading, .error { text-align: center; padding: 50px; font-size: 18px; }
-        .error { color: #dc3545; }
-        
-        @media print {
-          .no-print { display: none !important; }
-          .invoice-container { padding: 0; }
-          .invoice { border: none; box-shadow: none; }
-        }
-      `}</style>
     </div>
   );
 }

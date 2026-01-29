@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import { menuApi } from "../api";
 
 export default function Menu() {
   const nav = useNavigate();

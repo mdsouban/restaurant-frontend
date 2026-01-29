@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import { billApi } from "../api";
 
 export default function Billing() {
   const nav = useNavigate();
@@ -22,16 +22,16 @@ export default function Billing() {
   }, []);
 
   const loadMenuItems = async () => {
-    try {
-      const res = await api.get("/menu");
-      setMenuItems(res.data || []);
-    } catch (err) {
-      console.log(err);
-      alert("Failed to load menu items");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const data = await menuApi.getAll();
+    setMenuItems(data || []);
+  } catch (err) {
+    console.log(err);
+    alert("Failed to load menu items: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const addItem = (menuItem) => {
     const existing = items.find(x => x.id === menuItem.id);
@@ -59,32 +59,28 @@ export default function Billing() {
   const total = items.reduce((sum, x) => sum + (x.price * x.qty), 0);
 
   const saveBill = async () => {
-    if (!mobile || items.length === 0) {
-      alert("Enter mobile & add items");
-      return;
-    }
+  if (!mobile || items.length === 0) {
+    alert("Enter mobile & add items");
+    return;
+  }
 
-    try {
-      const res = await api.post("/bill", {
-        mobile,
-        items,
-        total,
-      });
+  try {
+    // CHANGE: Use Supabase instead of Render backend
+    const invoiceId = await billApi.create(mobile, items, total);
+    
+    const invoiceUrl = `${window.location.origin}/invoice/${invoiceId}`;
+    const whatsappMsg = encodeURIComponent(`Your bill is ready:\n${invoiceUrl}`);
 
-      const invoiceId = res.data.invoiceId;
-      const invoiceUrl = `${window.location.origin}/invoice/${invoiceId}`;
-      const whatsappMsg = encodeURIComponent(`Your bill is ready:\n${invoiceUrl}`);
-
-      window.open(`https://wa.me/91${mobile}?text=${whatsappMsg}`, "_blank");
-      
-      // Reset form
-      setMobile("");
-      setItems([]);
-      alert("✅ Bill saved & WhatsApp sent!");
-    } catch (err) {
-      alert("❌ Failed to save bill");
-      console.error(err);
-    }
+    window.open(`https://wa.me/91${mobile}?text=${whatsappMsg}`, "_blank");
+    
+    // Reset form
+    setMobile("");
+    setItems([]);
+    alert("✅ Bill saved & WhatsApp sent!");
+  } catch (err) {
+    alert("❌ Failed to save bill: " + err.message);
+    console.error(err);
+  }
   };
 
   return (
