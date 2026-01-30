@@ -63,23 +63,19 @@ export default function Billing() {
     const invoiceId = await billApi.create(mobile, items, total);
     const invoiceUrl = `${window.location.origin}/invoice/${invoiceId}`;
     
-    // Format message for WhatsApp with clickable link
-    const message = `🧾 *Your Restaurant Bill*\n\n` +
-               `💰 Total: ₹${total}\n\n` +
-               `📄 View Invoice: ${invoiceUrl}\n\n` +
-               `Thank you for dining with us! 🙏`;
-    
-    const whatsappMsg = encodeURIComponent(message);
+    const message = `🍽️ Restaurant Bill\n\nTotal: ₹${total}\n\nInvoice ID: ${invoiceId}\n\nTo view invoice, visit:\n${invoiceUrl}`;
     
     // Open WhatsApp
-    window.open(`https://wa.me/${mobile}?text=${whatsappMsg}`, "_blank");
+    window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(message)}`, "_blank");
+    
+    // Also show the invoice URL for easy access
+    alert(`Bill created!\n\nInvoice URL: ${invoiceUrl}\n\nNote: Deploy your app to make WhatsApp links clickable.`);
     
     setMobile("");
     setItems([]);
-    alert("✅ Bill saved & WhatsApp opened!");
+    
   } catch (err) {
-    alert("❌ Failed to save bill: " + err.message);
-    console.error(err);
+    alert("Failed: " + err.message);
   }
 };
   const filteredItems = menuItems.filter(item => 
