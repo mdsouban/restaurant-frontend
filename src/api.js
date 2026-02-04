@@ -1,50 +1,63 @@
-import axios from "axios";
+import { createClient } from '@supabase/supabase-js';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:10000",
-  timeout: 10000,
-});
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Menu Operations
 export const menuApi = {
   getAll: async () => {
-    const response = await api.get('/api/menu');
-    return response.data;
+    const { data, error } = await supabase.from('menu').select('*');
+    if (error) throw new Error(error.message);
+    return data;
   },
 
   add: async (item) => {
-    const response = await api.post('/api/menu', item);
-    return response.data;
+    const { data, error } = await supabase.from('menu').insert([item]).select();
+    if (error) throw new Error(error.message);
+    return data[0];
   },
 
   update: async (id, item) => {
-    const response = await api.put(`/api/menu/${id}`, item);
-    return response.data;
+    const { data, error } = await supabase.from('menu').update(item).eq('id', id).select();
+    if (error) throw new Error(error.message);
+    return data[0];
   },
 
   delete: async (id) => {
-    const response = await api.delete(`/api/menu/${id}`);
-    return response.data;
+    const { error } = await supabase.from('menu').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    return { success: true };
   }
 };
 
 // Bill Operations
 export const billApi = {
   create: async (mobile, items, total) => {
-    const response = await api.post('/api/bill', { mobile, items, total });
-    return response.data.invoiceId;
+    const { data, error } = await supabase.from('bills').insert([{
+      mobile,
+      items,
+      total,
+      created_at: new Date().toISOString()
+    }]).select();
+    if (error) throw new Error(error.message);
+    return data[0].id;
   },
 
   getById: async (id) => {
-    const response = await api.get(`/api/bill/${id}`);
-    return response.data;
+    const { data, error } = await supabase.from('bills').select('*').eq('id', id).single();
+    if (error) throw new Error(error.message);
+    return data;
   },
 
   getReport: async (date) => {
-    // This would need to be implemented in your backend
-    const response = await api.get(`/api/reports?date=${date}`);
-    return response.data;
+    const { data, error } = await supabase.from('bills')
+      .select('*')
+      .gte('created_at', `${date}T00:00:00`)
+      .lt('created_at', `${date}T23:59:59`);
+    if (error) throw new Error(error.message);
+    return data;
   }
 };
 
-export default api;
+export default menuApi;
