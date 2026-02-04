@@ -1,15 +1,18 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';  // Add this
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Menu from './pages/Menu';
 import Billing from './pages/Billing';
 import Reports from './pages/Reports';
 import Invoice from './pages/Invoice';
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isInvoicePage = location.pathname.startsWith('/invoice/');
+
   return (
-    <BrowserRouter>
-      <Navbar />  {/* Add this line */}
+    <>
+      {!isInvoicePage && <Navbar />}
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/menu" element={<Menu />} />
@@ -17,6 +20,14 @@ function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/invoice/:id" element={<Invoice />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

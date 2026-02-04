@@ -34,20 +34,42 @@ export const menuApi = {
 // Bill Operations
 export const billApi = {
   create: async (mobile, items, total) => {
-    const { data, error } = await supabase.from('bills').insert([{
+    // Create bill first
+    const { data: billData, error: billError } = await supabase.from('bills').insert([{
       mobile,
-      items,
       total,
       created_at: new Date().toISOString()
     }]).select();
-    if (error) throw new Error(error.message);
-    return data[0].id;
+    if (billError) throw new Error(billError.message);
+    
+    const billId = billData[0].id;
+    
+    // Insert bill items
+    const billItems = items.map(item => ({
+      bill_id: billId,
+      item_name: item.name,
+      price: item.price,
+      qty: item.qty
+    }));
+    
+    const { error: itemsError } = await supabase.from('bill_items').insert(billItems);
+    if (itemsError) throw new Error(itemsError.message);
+    
+    return billId;
   },
 
   getById: async (id) => {
-    const { data, error } = await supabase.from('bills').select('*').eq('id', id).single();
-    if (error) throw new Error(error.message);
-    return data;
+    // Get bill with items
+    const { data: billData, error: billError } = await supabase
+      .from('bills')
+      .select(`
+        *,
+        items:bill_items(*)
+      `)
+      .eq('id', id)
+      .single();
+    if (billError) throw new Error(billError.message);
+    return billData;
   },
 
   getReport: async (date) => {
